@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   reverse:
-    container_name: flutter-web-proxy
+    container_name: flutter-sandbox-web-proxy
     image: nginx
     network_mode: host
     volumes:

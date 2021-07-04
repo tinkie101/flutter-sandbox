@@ -1,76 +1,75 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sandbox/api/adventure/adventure.dart';
 import 'package:flutter_sandbox/api/adventure/adventure_api.dart';
+import 'package:flutter_sandbox/providers/adventures_model.dart';
+import 'package:provider/provider.dart';
 
-class MyHomePage extends StatefulWidget {
+class MyHomePage extends StatelessWidget {
   MyHomePage({Key? key}) : super(key: key);
-
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  Future<List<Adventure>>? adventuresFuture;
-
-  @override
-  void initState() {
-    super.initState();
-
-    adventuresFuture = AdventureApi().getAllAdventures();
-  }
 
   void _addAdventure() {}
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-        future: adventuresFuture,
-        builder: (context, snapshot) {
-          print(snapshot);
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasData) {
-            var adventures = snapshot.data as List<Adventure>;
-            return Scaffold(
-              appBar: AppBar(
-                title: Text("Home page"),
-              ),
-              body: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text("List of adventures:", style: TextStyle(fontSize: 24),),
+    print("build");
+
+    return Consumer<AdventuresModel>(
+      builder: (context, adventuresModel, child) => Navigator(
+          pages: [
+            MaterialPage(
+              key: ValueKey("AdventureList"),
+              child: Scaffold(
+                appBar: AppBar(
+                  title: Text("Home page"),
+                ),
+                body: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      "List of adventures:",
+                      style: TextStyle(fontSize: 24),
                     ),
-                    Container(
-                      height: MediaQuery.of(context).size.height * 0.80,
-                      child: ListView.builder(
-                        itemCount: adventures.length,
-                        itemBuilder: (context, index) => InkWell(
-                          child: Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(adventures.elementAt(index).description),
-                              ),
-                            ],
-                          ),
-                          onTap: () {},
+                  ),
+                  Container(
+                    height: MediaQuery.of(context).size.height * 0.80,
+                    child: ListView.builder(
+                      itemCount: adventuresModel.adventures.length,
+                      itemBuilder: (context, index) => InkWell(
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(adventuresModel.adventures.elementAt(index).description),
+                            ),
+                          ],
                         ),
+                        onTap: () {
+                          adventuresModel.selectedAdventure = adventuresModel.adventures.elementAt(index);
+                        },
                       ),
                     ),
-                  ]),
-              floatingActionButton: FloatingActionButton(
-                onPressed: _addAdventure,
-                tooltip: 'New Adventure',
-                child: Icon(Icons.add),
-              ), // This trailing comma makes auto-formatting nicer for build methods.
-            );
-          } else if (snapshot.hasError) {
-            return Center(child: Text(snapshot.error.toString()));
-          } else {
-            return Center(child: Text("Something went wrong"));
-          }
-        });
+                  ),
+                ]),
+                floatingActionButton: FloatingActionButton(
+                  onPressed: _addAdventure,
+                  tooltip: 'New Adventure',
+                  child: Icon(Icons.add),
+                ), // This trailing comma makes auto-formatting nicer for build methods.
+              ),
+            ),
+            if (adventuresModel.selectedAdventure != null)
+              MaterialPage(
+                  key: ValueKey("AdventureDetail"),
+                  child: Scaffold(
+                    appBar: AppBar(
+                      title: Text("Adventure details"),
+                    ),
+                    body: Center(child: Text(adventuresModel.selectedAdventure!.description)),
+                  )),
+          ],
+          onPopPage: (route, result) {
+            return route.didPop(result);
+          }),
+    );
   }
 }

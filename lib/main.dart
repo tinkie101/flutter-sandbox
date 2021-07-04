@@ -2,11 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sandbox/api/api_manager/api_manager.dart';
 import 'package:flutter_sandbox/pages/home_page.dart';
 import 'package:flutter_sandbox/pages/login_page.dart';
+import 'package:flutter_sandbox/providers/adventures_model.dart';
 import 'package:flutter_sandbox/providers/login_model.dart';
 import 'package:provider/provider.dart';
 
 void main() {
-  runApp(ChangeNotifierProvider(create: (context) => LoginModel(), child: MyApp()));
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) => LoginModel(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => AdventuresModel(),
+        ),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

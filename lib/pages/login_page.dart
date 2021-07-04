@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sandbox/api/api_manager/api_manager.dart';
+import 'package:flutter_sandbox/providers/adventures_model.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -16,12 +18,24 @@ class _LoginPageState extends State<LoginPage> {
 
     String username = "", password = "";
 
-    VoidCallback _submitForm = () {
+    var _submitForm = (context) async {
       // Validate returns true if the form is valid, or false otherwise.
       if (_formKey.currentState!.validate()) {
         _formKey.currentState!.save();
 
-        ApiManager().login(username, password);
+        try {
+          await ApiManager().login(username, password);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("Login successful"),
+            duration: Duration(seconds: 3),
+          ));
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("Login failed ${e.toString()}"),
+            duration: Duration(seconds: 30),
+          ));
+          rethrow;
+        }
       }
     };
 
@@ -74,7 +88,7 @@ class _LoginPageState extends State<LoginPage> {
                         focusNode: focusPassword,
                         textInputAction: TextInputAction.done,
                         onFieldSubmitted: (v) {
-                          _submitForm();
+                          _submitForm(context);
                         },
                         onSaved: (value) {
                           password = value ?? "";
@@ -85,7 +99,7 @@ class _LoginPageState extends State<LoginPage> {
                       padding: const EdgeInsets.all(8.0),
                       child: ElevatedButton(
                         focusNode: focusLogin,
-                        onPressed: _submitForm,
+                        onPressed: () => _submitForm(context),
                         child: Text('Login'),
                       ),
                     )

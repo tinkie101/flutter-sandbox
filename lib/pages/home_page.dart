@@ -2,14 +2,17 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sandbox/api/adventure/adventure.dart';
 import 'package:flutter_sandbox/api/adventure/adventure_api.dart';
-import 'package:flutter_sandbox/custom_color_scheme.dart';
+import 'package:flutter_sandbox/custom_theme_colors.dart';
 import 'package:flutter_sandbox/providers/adventures_model.dart';
 import 'package:provider/provider.dart';
 
 class MyHomePage extends StatelessWidget {
   MyHomePage({Key? key}) : super(key: key);
 
-  void _addAdventure() {}
+  void _addAdventure(context) {
+    Provider.of<AdventuresModel>(context, listen: false)
+        .addAdventure(Adventure(id: "", description: "This is a new adventure", name: "newAdventure"));
+  }
 
   updateAdventure(context, Adventure adventure) {
     try {
@@ -71,7 +74,7 @@ class MyHomePage extends StatelessWidget {
                   ),
                 ]),
                 floatingActionButton: FloatingActionButton(
-                  onPressed: _addAdventure,
+                  onPressed: () => _addAdventure(context),
                   tooltip: 'New Adventure',
                   child: Icon(Icons.add),
                 ), // This trailing comma makes auto-formatting nicer for build methods.
@@ -84,42 +87,73 @@ class MyHomePage extends StatelessWidget {
                     appBar: AppBar(
                       title: Text("Adventure details"),
                     ),
-                    body: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Form(
-                        child: Column(
-                          children: [
-                            Row(
+                    body: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Form(
+                            child: Column(
                               children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text("Description:", style: TextStyle(fontWeight: FontWeight.bold)),
+                                Row(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text("Description:", style: TextStyle(fontWeight: FontWeight.bold)),
+                                    ),
+                                    Flexible(
+                                      child: TextFormField(
+                                        style: TextStyle(color: Theme.of(context).customDescriptionColor),
+                                        initialValue: adventuresModel.selectedAdventure!.description,
+                                        validator: (String? value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'required';
+                                          }
+                                        },
+                                        textInputAction: TextInputAction.done,
+                                        onFieldSubmitted: (String value) {
+                                          updateAdventure(context,
+                                              adventuresModel.selectedAdventure!.alteredAdventure(description: value));
+                                        },
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Flexible(
-                                  child: TextFormField(
-                                    style: TextStyle(color: Theme.of(context).customDescriptionColor),
-                                    initialValue: adventuresModel.selectedAdventure!.description,
-                                    validator: (String? value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'required';
-                                      }
-                                    },
-                                    textInputAction: TextInputAction.done,
-                                    onFieldSubmitted: (String value) {
-                                      updateAdventure(context, adventuresModel.selectedAdventure!.alteredAdventure(description: value));
-                                    },
-                                  ),
-                                ),
+                                Text("*press Enter to save"),
                               ],
                             ),
-                            Text("*press Enter to save"),
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: TextButton(
+                                  style: ButtonStyle(
+                                    backgroundColor:
+                                        MaterialStateColor.resolveWith((states) => Theme.of(context).deleteButtonColor),
+                                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                                      RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(18.0),
+                                        side: BorderSide(color: Theme.of(context).deleteButtonColor),
+                                      ),
+                                    ),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text("Delete"),
+                                  ),
+                                  onPressed: () => Provider.of<AdventuresModel>(context, listen: false)
+                                      .deleteAdventure(adventuresModel.selectedAdventure!)),
+                            ),
                           ],
                         ),
-                      ),
+                      ],
                     ),
                   )),
           ],
           onPopPage: (route, result) {
+            adventuresModel.selectedAdventure = null;
             return route.didPop(result);
           }),
     );

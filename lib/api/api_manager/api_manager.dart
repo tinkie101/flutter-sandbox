@@ -35,12 +35,32 @@ class ApiManager {
       throw Exception('Request failed: ${e.toString()}');
     }
   }
-  
+
   Future<http.Response> put(String path, String jsonObject) async {
     try {
       Map<String, String> headers = await _getAuthHeader()..addAll({"Content-Type": "application/json"});
 
       return http.put(_getUri(path), headers: headers, body: jsonObject);
+    } catch (e) {
+      throw Exception('Request failed: ${e.toString()}');
+    }
+  }
+
+  Future<http.Response> post(String path, String jsonObject) async {
+    try {
+      Map<String, String> headers = await _getAuthHeader()..addAll({"Content-Type": "application/json"});
+
+      return http.post(_getUri(path), headers: headers, body: jsonObject);
+    } catch (e) {
+      throw Exception('Request failed: ${e.toString()}');
+    }
+  }
+
+  Future<http.Response> delete(String path, {String? jsonObject}) async {
+    try {
+      Map<String, String> headers = await _getAuthHeader();
+
+      return http.delete(_getUri(path), headers: headers, body: jsonObject);
     } catch (e) {
       throw Exception('Request failed: ${e.toString()}');
     }

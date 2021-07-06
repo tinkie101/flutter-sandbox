@@ -18,6 +18,13 @@ class AdventuresModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future addAdventure(Adventure adventure) async {
+    Adventure newAdventure = await AdventureApi().createAdventure(adventure);
+    _adventures.add(newAdventure);
+
+    notifyListeners();
+  }
+
   Future updateAdventure(Adventure adventure) async {
     Adventure updatedAdventure = await AdventureApi().updateAdventure(adventure);
 
@@ -27,10 +34,26 @@ class AdventuresModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future deleteAdventure(Adventure adventure) async {
+    await AdventureApi().deleteAdventure(adventure);
+
+    var index = _adventures.indexWhere((element) => element.id == adventure.id);
+    _adventures.removeAt(index);
+
+    if(index == index)
+      _selectedAdventureIndex = null;
+
+    notifyListeners();
+  }
+
   Adventure? get selectedAdventure => _selectedAdventureIndex == null? null: _adventures[_selectedAdventureIndex!];
 
   set selectedAdventure(adventure){
-    _selectedAdventureIndex = _adventures.indexOf(adventure);
+    if(adventure == null)
+      _selectedAdventureIndex = null;
+    else
+      _selectedAdventureIndex = _adventures.indexOf(adventure);
+
     notifyListeners();
   }
 }

@@ -17,14 +17,20 @@ class AdventureApi {
       return adventures;
   }
 
-  Future<Adventure> updateAdventure(Adventure adventure) async {
-    http.Response response = await _updateAdventuresResponse(adventure);
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to load list of adventures: ${response.body}');
-    }
+  Future<Adventure> createAdventure(Adventure adventure) async {
+    http.Response response = await _createAdventureResponse(adventure);
 
     return Adventure.fromJson(jsonDecode(response.body));
+  }
+
+  Future<Adventure> updateAdventure(Adventure adventure) async {
+    http.Response response = await _updateAdventureResponse(adventure);
+
+    return Adventure.fromJson(jsonDecode(response.body));
+  }
+
+  Future deleteAdventure(Adventure adventure) async {
+    await _deleteAdventureResponse(adventure);
   }
 
   Future<http.Response> _getAdventuresResponse() async {
@@ -36,14 +42,34 @@ class AdventureApi {
     
     return response;
   }
-  
-  Future<http.Response> _updateAdventuresResponse(Adventure adventure) async {
-    http.Response response = await _apiManager.put("/adventure/${adventure.id}", jsonEncode(adventure.toJson()));
-    
+
+  Future<http.Response> _createAdventureResponse(Adventure adventure) async {
+    http.Response response = await _apiManager.post("/adventure", jsonEncode(adventure.toJson()));
+
     if (response.statusCode != 200) {
-      throw Exception('Failed to load list of adventures: ${response.body}');
+      throw Exception('Failed to create adventure: ${response.body}');
     }
-    
+
+    return response;
+  }
+
+  Future<http.Response> _updateAdventureResponse(Adventure adventure) async {
+    http.Response response = await _apiManager.put("/adventure/${adventure.id}", jsonEncode(adventure.toJson()));
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update adventure: ${response.body}');
+    }
+
+    return response;
+  }
+
+  Future<http.Response> _deleteAdventureResponse(Adventure adventure) async {
+    http.Response response = await _apiManager.delete("/adventure/${adventure.id}");
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete adventure: ${response.body}');
+    }
+
     return response;
   }
 }

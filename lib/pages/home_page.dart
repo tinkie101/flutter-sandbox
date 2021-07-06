@@ -1,6 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sandbox/api/adventure/adventure.dart';
 import 'package:flutter_sandbox/api/adventure/adventure_api.dart';
+import 'package:flutter_sandbox/custom_color_scheme.dart';
 import 'package:flutter_sandbox/providers/adventures_model.dart';
 import 'package:provider/provider.dart';
 
@@ -8,6 +10,24 @@ class MyHomePage extends StatelessWidget {
   MyHomePage({Key? key}) : super(key: key);
 
   void _addAdventure() {}
+
+  updateAdventure(context, Adventure adventure) {
+    try {
+      Provider.of<AdventuresModel>(context, listen: false).updateAdventure(adventure);
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Adventure updated"),
+        duration: Duration(seconds: 3),
+      ));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Failed to update adventure"),
+        duration: Duration(seconds: 3),
+      ));
+
+      rethrow;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +84,39 @@ class MyHomePage extends StatelessWidget {
                     appBar: AppBar(
                       title: Text("Adventure details"),
                     ),
-                    body: Center(child: Text(adventuresModel.selectedAdventure!.description)),
+                    body: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Form(
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text("Description:", style: TextStyle(fontWeight: FontWeight.bold)),
+                                ),
+                                Flexible(
+                                  child: TextFormField(
+                                    style: TextStyle(color: Theme.of(context).customDescriptionColor),
+                                    initialValue: adventuresModel.selectedAdventure!.description,
+                                    validator: (String? value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'required';
+                                      }
+                                    },
+                                    textInputAction: TextInputAction.done,
+                                    onFieldSubmitted: (String value) {
+                                      updateAdventure(context, adventuresModel.selectedAdventure!.alteredAdventure(description: value));
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text("*press Enter to save"),
+                          ],
+                        ),
+                      ),
+                    ),
                   )),
           ],
           onPopPage: (route, result) {

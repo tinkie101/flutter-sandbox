@@ -26,15 +26,30 @@ class ApiManager {
 
   get hasCredentials => _userCredentials.value != null;
 
-  Future<http.Response> request(String path) async {
+  Future<http.Response> get(String path) async {
     try {
-      String accessToken = await _getUserAccessToken();
-      Map<String, String> headers = {"Authorization": "Bearer $accessToken"};
+      Map<String, String> headers = await _getAuthHeader();
 
       return http.get(_getUri(path), headers: headers);
     } catch (e) {
       throw Exception('Request failed: ${e.toString()}');
     }
+  }
+  
+  Future<http.Response> put(String path, String jsonObject) async {
+    try {
+      Map<String, String> headers = await _getAuthHeader()..addAll({"Content-Type": "application/json"});
+
+      return http.put(_getUri(path), headers: headers, body: jsonObject);
+    } catch (e) {
+      throw Exception('Request failed: ${e.toString()}');
+    }
+  }
+
+  Future<Map<String, String>> _getAuthHeader() async {
+    String accessToken = await _getUserAccessToken();
+    Map<String, String> headers = {"Authorization": "Bearer $accessToken"};
+    return headers;
   }
 
   Future<void> login(String username, String password) async {
@@ -67,7 +82,9 @@ class ApiManager {
 
     if(credentials != null) {
       var localCredentials = LocalUserCredentials.fromJson(jsonDecode(credentials));
-      _userCredentials.value = UserCredentials.fromLocal(localCredentials);
+      var validNow = DateTime.now().add(Duration(seconds: 10));
+      if(validNow.isBefore(localCredentials.refreshExpiryDateTime))
+        _userCredentials.value = UserCredentials.fromLocal(localCredentials);
     }
   }
 

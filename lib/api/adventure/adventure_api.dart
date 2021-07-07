@@ -5,9 +5,7 @@ import 'package:flutter_sandbox/api/api_manager/api_manager.dart';
 import 'package:http/http.dart' as http;
 
 class AdventureApi {
-  final _apiManager = ApiManager();
-
-  Future<List<Adventure>> getAllAdventures() async {
+  static Future<List<Adventure>> getAllAdventures() async {
       http.Response response = await _getAdventuresResponse();
 
       List<Adventure> adventures = (jsonDecode(response.body) as List)
@@ -17,24 +15,24 @@ class AdventureApi {
       return adventures;
   }
 
-  Future<Adventure> createAdventure(Adventure adventure) async {
+  static Future<Adventure> createAdventure(Adventure adventure) async {
     http.Response response = await _createAdventureResponse(adventure);
 
     return Adventure.fromJson(jsonDecode(response.body));
   }
 
-  Future<Adventure> updateAdventure(Adventure adventure) async {
+  static Future<Adventure> updateAdventure(Adventure adventure) async {
     http.Response response = await _updateAdventureResponse(adventure);
 
     return Adventure.fromJson(jsonDecode(response.body));
   }
 
-  Future deleteAdventure(Adventure adventure) async {
+  static Future deleteAdventure(Adventure adventure) async {
     await _deleteAdventureResponse(adventure);
   }
 
-  Future<http.Response> _getAdventuresResponse() async {
-    http.Response response = await _apiManager.get("/adventures");
+  static Future<http.Response> _getAdventuresResponse() async {
+    http.Response response = await ApiManager.get("/adventures");
     
     if (response.statusCode != 200) {
       throw Exception('Failed to load list of adventures: ${response.body}');
@@ -43,8 +41,8 @@ class AdventureApi {
     return response;
   }
 
-  Future<http.Response> _createAdventureResponse(Adventure adventure) async {
-    http.Response response = await _apiManager.post("/adventure", jsonEncode(adventure.toJson()));
+  static Future<http.Response> _createAdventureResponse(Adventure adventure) async {
+    http.Response response = await ApiManager.post("/adventure", jsonEncode(adventure.toJson()));
 
     if (response.statusCode != 200) {
       throw Exception('Failed to create adventure: ${response.body}');
@@ -53,8 +51,8 @@ class AdventureApi {
     return response;
   }
 
-  Future<http.Response> _updateAdventureResponse(Adventure adventure) async {
-    http.Response response = await _apiManager.put("/adventure/${adventure.id}", jsonEncode(adventure.toJson()));
+  static Future<http.Response> _updateAdventureResponse(Adventure adventure) async {
+    http.Response response = await ApiManager.put("/adventure/${adventure.id}", jsonEncode(adventure.toJson()));
 
     if (response.statusCode != 200) {
       throw Exception('Failed to update adventure: ${response.body}');
@@ -63,8 +61,8 @@ class AdventureApi {
     return response;
   }
 
-  Future<http.Response> _deleteAdventureResponse(Adventure adventure) async {
-    http.Response response = await _apiManager.delete("/adventure/${adventure.id}");
+  static Future<http.Response> _deleteAdventureResponse(Adventure adventure) async {
+    http.Response response = await ApiManager.delete("/adventure/${adventure.id}");
 
     if (response.statusCode != 200) {
       throw Exception('Failed to delete adventure: ${response.body}');

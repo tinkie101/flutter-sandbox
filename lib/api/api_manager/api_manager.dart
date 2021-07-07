@@ -1,78 +1,74 @@
 import 'dart:convert';
+import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter_sandbox/api/api_manager/local_user_credentials.dart';
 import 'package:flutter_sandbox/api/api_manager/login_dto.dart';
-import 'package:flutter_sandbox/api/api_manager/user_credentials.dart';
+import 'package:flutter_sandbox/api/api_manager/user_credentials_dto.dart';
+import 'package:flutter_sandbox/api/auth_manager/auth_manager.dart';
 import 'package:flutter_sandbox/constants.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
-//Singleton
+const _loginPath = "/auth/login";
+
 class ApiManager {
-  static final ApiManager _apiManager = ApiManager._internal();
+  static final _authManager = AuthManager();
 
-  factory ApiManager() => _apiManager;
-
-  ApiManager._internal();
-
-  final _loginPath = "/auth/login";
-
-  ValueNotifier<UserCredentials?> _userCredentials = ValueNotifier(null);
-
-  listenCredentials(VoidCallback listenMethod) {
-    _userCredentials.addListener(listenMethod);
-  }
-
-  get hasCredentials => _userCredentials.value != null;
-
-  Future<http.Response> get(String path) async {
+  static Future<http.Response> get(String path) async {
     try {
       Map<String, String> headers = await _getAuthHeader();
 
-      return http.get(_getUri(path), headers: headers);
+      http.Response response = await http.get(_getUri(path), headers: headers);
+      if (response.statusCode != 401) {
+        _authManager.refreshCredentialExpireDates();
+      }
+      return response;
     } catch (e) {
       throw Exception('Request failed: ${e.toString()}');
     }
   }
 
-  Future<http.Response> put(String path, String jsonObject) async {
+  static Future<http.Response> put(String path, String jsonObject) async {
     try {
       Map<String, String> headers = await _getAuthHeader()..addAll({"Content-Type": "application/json"});
 
-      return http.put(_getUri(path), headers: headers, body: jsonObject);
+      http.Response response = await http.put(_getUri(path), headers: headers, body: jsonObject);
+      if (response.statusCode != 401) {
+        _authManager.refreshCredentialExpireDates();
+      }
+      return response;
     } catch (e) {
       throw Exception('Request failed: ${e.toString()}');
     }
   }
 
-  Future<http.Response> post(String path, String jsonObject) async {
+  static Future<http.Response> post(String path, String jsonObject) async {
     try {
       Map<String, String> headers = await _getAuthHeader()..addAll({"Content-Type": "application/json"});
 
-      return http.post(_getUri(path), headers: headers, body: jsonObject);
+      http.Response response = await http.post(_getUri(path), headers: headers, body: jsonObject);
+      if (response.statusCode != 401) {
+        _authManager.refreshCredentialExpireDates();
+      }
+      return response;
     } catch (e) {
       throw Exception('Request failed: ${e.toString()}');
     }
   }
 
-  Future<http.Response> delete(String path, {String? jsonObject}) async {
+  static Future<http.Response> delete(String path, {String? jsonObject}) async {
     try {
       Map<String, String> headers = await _getAuthHeader();
 
-      return http.delete(_getUri(path), headers: headers, body: jsonObject);
+      http.Response response = await http.delete(_getUri(path), headers: headers, body: jsonObject);
+      if (response.statusCode != 401) {
+        _authManager.refreshCredentialExpireDates();
+      }
+      return response;
     } catch (e) {
       throw Exception('Request failed: ${e.toString()}');
     }
   }
 
-  Future<Map<String, String>> _getAuthHeader() async {
-    String accessToken = await _getUserAccessToken();
-    Map<String, String> headers = {"Authorization": "Bearer $accessToken"};
-    return headers;
-  }
-
-  Future<void> login(String username, String password) async {
+  static Future<void> login(String username, String password) async {
     LoginDto loginDto = LoginDto(grantType: "password", username: username, password: password);
 
     try {
@@ -83,68 +79,23 @@ class ApiManager {
         throw Exception("Could not log user in: ${response.reasonPhrase}");
       }
 
-      await _updateUserCredentials(UserCredentials.fromJson(jsonDecode(response.body)));
+      await _authManager.updateUserCredentials(UserCredentialsDto.fromJson(jsonDecode(response.body)));
     } catch (e) {
       throw Exception('Request failed: ${e.toString()}');
     }
   }
 
-  logout() async {
-    var prefs = await SharedPreferences.getInstance();
-    await prefs.remove("credentials");
-    _userCredentials.value = null;
+  static logout() async {
+    await _authManager.clearUserAccessToken();
   }
 
-  updateCredentialsFromLocal() async {
-    var prefs = await SharedPreferences.getInstance();
-
-    String? credentials = prefs.getString("credentials");
-
-    if(credentials != null) {
-      var localCredentials = LocalUserCredentials.fromJson(jsonDecode(credentials));
-      var validNow = DateTime.now().add(Duration(seconds: 10));
-      if(validNow.isBefore(localCredentials.refreshExpiryDateTime))
-        _userCredentials.value = UserCredentials.fromLocal(localCredentials);
-    }
+  static Future<Map<String, String>> _getAuthHeader() async {
+    String accessToken = await _authManager.getUserAccessToken();
+    Map<String, String> headers = {HttpHeaders.authorizationHeader: "Bearer $accessToken"};
+    return headers;
   }
 
-  _updateUserCredentials(userCredentials) async {
-    var prefs = await SharedPreferences.getInstance();
-
-    if(await prefs.setString("credentials", jsonEncode(userCredentials.toJson())))
-      _userCredentials.value = userCredentials;
-  }
-
-  Future<String> _getUserAccessToken() async {
-    var validNow = DateTime.now().add(Duration(seconds: 5));
-
-    var uc = _userCredentials.value;
-
-    if (validNow.isAfter(uc?.expiryDateTime ?? validNow)) {
-      if (validNow.isBefore(uc?.refreshExpiryDateTime ?? validNow)) {
-        uc = await _refreshUserCredentials(uc!.refreshToken);
-      }
-    }
-
-    if (uc == null) {
-      await logout();
-      throw Exception('Invalid user credentials!');
-    }
-
-    _updateUserCredentials(uc);
-    return uc.accessToken;
-  }
-
-  Future<UserCredentials?> _refreshUserCredentials(String refreshToken) async {
-    LoginDto loginDto = LoginDto(grantType: "refresh_token", refreshToken: refreshToken);
-    http.Response response = await http.post(_getUri(_loginPath),headers: {"Content-Type": "application/json"}, body: jsonEncode(loginDto.toJson()));
-
-    if (response.statusCode == 200) {
-      return UserCredentials.fromJson(jsonDecode(response.body));
-    }
-  }
-
-  Uri _getUri(String path) {
+  static Uri _getUri(String path) {
     if (kApiSecure) {
       return Uri.https(kApi, "/adventure$path");
     } else {

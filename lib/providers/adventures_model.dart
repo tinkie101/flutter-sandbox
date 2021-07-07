@@ -13,20 +13,20 @@ class AdventuresModel extends ChangeNotifier {
   List<Adventure> get adventures => _adventures.toList();
 
   Future fetchAllAdventures() async {
-    _adventures = await AdventureApi().getAllAdventures();
+    _adventures = await AdventureApi.getAllAdventures();
 
     notifyListeners();
   }
 
   Future addAdventure(Adventure adventure) async {
-    Adventure newAdventure = await AdventureApi().createAdventure(adventure);
+    Adventure newAdventure = await AdventureApi.createAdventure(adventure);
     _adventures.add(newAdventure);
 
     notifyListeners();
   }
 
   Future updateAdventure(Adventure adventure) async {
-    Adventure updatedAdventure = await AdventureApi().updateAdventure(adventure);
+    Adventure updatedAdventure = await AdventureApi.updateAdventure(adventure);
 
     var index = _adventures.indexWhere((element) => element.id == updatedAdventure.id);
     _adventures[index] = updatedAdventure;
@@ -35,7 +35,7 @@ class AdventuresModel extends ChangeNotifier {
   }
 
   Future deleteAdventure(Adventure adventure) async {
-    await AdventureApi().deleteAdventure(adventure);
+    await AdventureApi.deleteAdventure(adventure);
 
     var index = _adventures.indexWhere((element) => element.id == adventure.id);
     _adventures.removeAt(index);

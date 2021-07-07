@@ -5,5 +5,7 @@ extension CustomThemeColors on ThemeData {
       ? const Color(0xff0f4b1b)
       : const Color(0xd232d056);
 
-  Color get deleteButtonColor => Colors.red.shade100;
+  Color get deleteButtonColor => brightness == Brightness.light
+  ? Colors.red.shade700
+  : Colors.red.shade200;
 }

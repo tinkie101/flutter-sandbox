@@ -24,7 +24,7 @@ class _LoginPageState extends State<LoginPage> {
         _formKey.currentState!.save();
 
         try {
-          await ApiManager().login(username, password);
+          await ApiManager.login(username, password);
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text("Login successful"),
             duration: Duration(seconds: 3),
